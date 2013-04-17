@@ -1,0 +1,15 @@
+{
+    "name": "bloggs/test",
+    "description": "Package Test",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Fred Bloggs",
+            "email": "fred@somewhere.org"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.2",
+        "monolog/monolog": "1.0.*"
+    }
+}

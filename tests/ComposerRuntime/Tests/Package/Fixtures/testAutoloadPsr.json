@@ -1,0 +1,20 @@
+{
+    "name": "bloggs/test",
+    "description": "Package Test",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Fred Bloggs",
+            "email": "fred@somewhere.org"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.2"
+    },
+    "autoload": {
+        "psr-0": {
+            "Monolog": "src/",
+            "Bloggs\\Utils\\": "src/"
+        }
+    }
+}

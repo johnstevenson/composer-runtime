@@ -1,0 +1,18 @@
+{
+    "name": "bloggs/test",
+    "description": "Package Test",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Fred Bloggs",
+            "email": "fred@somewhere.org"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.2"
+    },
+    "repositories": {
+        "type": "pear",
+        "url": "http://pear2.php.net"
+    }
+}

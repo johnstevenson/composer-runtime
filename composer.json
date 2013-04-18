@@ -1,33 +1,28 @@
 {
-
-  "name": "johnstevenson/composer-run",
-  "description": "Run Composer from your application",
-  "keywords": ["composer", "run"],
-  "homepage": "http://github.com/johnstevenson/composer-run",
-  "type": "library",
-  "license": "MIT",
-  "authors": [
+    "name": "johnstevenson/composer-runtime",
+    "type": "library",
+    "description": "Run Composer from your application",
+    "keywords": ["composer", "run", "runtime"],
+    "homepage": "http://github.com/johnstevenson/composer-runtime",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "John Stevenson",
+            "email": "john-stevenson@blueyonder.co.uk"
+        }
+    ],
+    "repositories": [
     {
-      "name": "John Stevenson",
-      "email": "john-stevenson@blueyonder.co.uk"
+        "type": "vcs",
+        "url": "git://github.com/johnstevenson/json-works"
     }
-  ],
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "git://github.com/johnstevenson/json-works"
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=5.3.2",
+        "johnstevenson/json-works": "dev-master"
+    },
+    "autoload": {
+        "psr-0": {"JohnStevenson\\ComposerRuntime": "src/"}
     }
-  ],
-
-  "minimum-stability": "dev",
-
-  "require": {
-    "php": ">=5.3.2",
-    "johnstevenson/json-works": "dev-master"
-  },
-
-  "autoload": {
-    "psr-0": {"JohnStevenson\\ComposerRuntime": "src/"}
-  }
-
 }

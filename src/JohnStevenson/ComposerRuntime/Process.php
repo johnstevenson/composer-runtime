@@ -47,7 +47,7 @@ class Process
     public function getCommand()
     {
         if (!$this->command) {
-            if ($composerPhar = $this->getComposerPhar(false)) {
+            if ($composerPhar = $this->getPhar(false)) {
                 $this->command = 'php '.escapeshellarg($composerPhar);
             } else {
                 $this->command = 'composer';
@@ -64,7 +64,7 @@ class Process
     */
     public function getComposerPhar()
     {
-        return $this->getComposerPhar(true);
+        return $this->getPhar(true);
     }
 
     /**
@@ -129,7 +129,7 @@ class Process
     * @param boolean $global Whether to search outside the current project directory
     * @return string|null The full path to composer.phar
     */
-    protected function getComposerPhar($global)
+    protected function getPhar($global)
     {
         $composerPhar = null;
         $path = __DIR__;

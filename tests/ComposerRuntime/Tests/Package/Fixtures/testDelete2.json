@@ -1,15 +1,15 @@
 {
     "name": "bloggs/test",
-    "description": "Package Test",
     "type": "library",
+    "description": "Package Test",
+    "license": [
+        "GPL-3.0+"
+    ],
     "authors": [
         {
             "name": "Fred Bloggs",
             "email": "fred@somewhere.org"
         }
-    ],
-    "license": [
-        "GPL-3.0+"
     ],
     "require": {
         "php": ">=5.3.2",

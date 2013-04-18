@@ -16,9 +16,8 @@ class DeleteTest extends \ComposerRuntime\Tests\Base
         $result = $this->package->valueDelete('/minimum-stability');
         $this->assertTrue($result);
 
-        $this->package->document->toJson($json, true);
         $expected = $this->getExpected(__FUNCTION__);
-        $this->assertEquals($expected, $json);
+        $this->assertEquals($expected, $this->package->toJson());
     }
 
     /**
@@ -33,9 +32,8 @@ class DeleteTest extends \ComposerRuntime\Tests\Base
         $result = $this->package->valueDelete('/license/0');
         $this->assertTrue($result);
 
-        $this->package->document->toJson($json, true);
         $expected = $this->getExpected(__FUNCTION__);
-        $this->assertEquals($expected, $json);
+        $this->assertEquals($expected, $this->package->toJson());
     }
 
     /**
@@ -50,9 +48,8 @@ class DeleteTest extends \ComposerRuntime\Tests\Base
         $result = $this->package->linkDelete('require', 'monolog/monolog');
         $this->assertTrue($result);
 
-        $this->package->document->toJson($json, true);
         $expected = $this->getExpected(__FUNCTION__);
-        $this->assertEquals($expected, $json);
+        $this->assertEquals($expected, $this->package->toJson());
     }
 }
 

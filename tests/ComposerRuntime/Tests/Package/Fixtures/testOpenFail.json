@@ -1,7 +1,7 @@
 {
     "name": "bloggs/test",
-    "description": "Package Test",
     "type": "library",
+    "description": "Package Test",
     "authors": [
         {
             "name": "Fred Bloggs",

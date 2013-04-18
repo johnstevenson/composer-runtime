@@ -1,7 +1,8 @@
 {
     "name": "bloggs/test",
-    "description": "Package Test",
     "type": "library",
+    "description": "Package Test",
+    "license": "MIT",
     "authors": [
         {
             "name": "Fred Bloggs",
@@ -10,6 +11,5 @@
     ],
     "require": {
         "php": ">=5.3.2"
-    },
-    "license": "MIT"
+    }
 }

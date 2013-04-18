@@ -1,7 +1,7 @@
 {
     "name": "bloggs/test",
-    "description": "test",
     "type": "library",
+    "description": "test",
     "authors": [
         {
             "name": "Fred Bloggs",

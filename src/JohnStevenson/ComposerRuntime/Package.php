@@ -5,18 +5,38 @@ namespace JohnStevenson\ComposerRuntime;
 use \JohnStevenson\JsonWorks\Document as Document;
 use \JohnStevenson\JsonWorks\Utils as Utils;
 
+/**
+* The Package class
+*
+* @author John Stevenson <john-stevenson@blueyonder.co.uk>
+*/
 class Package
 {
     /**
-    * @var \JohnStevenson\JsonWorks\Document
+    * @var JohnStevenson\JsonWorks\Document
     */
     public $document;
+
+    /**
+    * @var boolean
+    */
     public $jsonTabs;
+
+    /**
+    * @var string
+    */
     public $filename;
 
-    public function __construct()
+    public function __construct($param = null)
     {
-        $this->document = new Document(null, $this->getSchema());
+        if (is_string($param)) {
+            $this->open($param);
+        } else {
+            $this->document = new Document(null, $this->getSchema());
+            if (null !== $param) {
+                $this->create($param);
+            }
+        }
     }
 
     public function create($values)
@@ -34,8 +54,8 @@ class Package
         }
 
         $this->valueAdd('/name', $vendor.'/'.$name);
-        $this->valueAdd('/description', $description);
         $this->valueAdd('/type', 'library');
+        $this->valueAdd('/description', $description);
 
         if ($author && $email) {
             $this->valueAdd('/authors/0/name', $author);
@@ -72,7 +92,7 @@ class Package
 
     public function toJson()
     {
-        if (!$this->document->toJson($json, true, $this->jsonTabs)) {
+        if (!$this->document->toJsonEx($json, true, true, true, $this->jsonTabs)) {
             throw new \RuntimeException($this->document->error);
         }
         return $json;
@@ -173,7 +193,7 @@ class Package
         }
     }
 
-    private function getSchema()
+    protected function getSchema()
     {
         return __DIR__.'/Schema/package-v4.json';
     }

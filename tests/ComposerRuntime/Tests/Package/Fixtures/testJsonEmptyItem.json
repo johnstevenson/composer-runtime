@@ -2,13 +2,15 @@
     "name": "bloggs/test",
     "type": "library",
     "description": "Package Test",
+    "license": [
+        "MIT",
+        "GPL-3.0+"
+    ],
     "authors": [
         {
             "name": "Fred Bloggs",
             "email": "fred@somewhere.org"
         }
     ],
-    "require": {
-        "php": ">=5.3.2"
-    }
+    "minimum-stability": "dev"
 }

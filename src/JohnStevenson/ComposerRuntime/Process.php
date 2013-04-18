@@ -85,10 +85,7 @@ class Process
     */
     public function packageCreate($values)
     {
-        $package = new Package();
-        $package->create($values);
-
-        return $package;
+        return new Package($values);
     }
 
     /**
@@ -99,10 +96,7 @@ class Process
     */
     public function packageOpen($filename)
     {
-        $package = new Package();
-        $package->open($filename);
-
-        return $package;
+        return new Package($filename);
     }
 
     /**

@@ -212,7 +212,7 @@ class Process
     protected function processWork($params, $workingDirectory, &$output, $capture)
     {
         $cwd = $this->changeWorkingDirectory($workingDirectory);
-        $command = $this->processGetCommand().' '.$this->getParams($params);
+        $command = $this->getCommand().' '.$this->getParams($params);
 
         if ($capture) {
             $output = array();

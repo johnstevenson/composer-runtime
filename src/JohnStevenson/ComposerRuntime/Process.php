@@ -261,6 +261,6 @@ class Process
 
         $params = (array) $params;
         array_unshift($params, $install ? 'install' : 'update');
-        return $this->processRun($params, dirname($package->filename));
+        return $this->run($params, dirname($package->filename));
     }
 }

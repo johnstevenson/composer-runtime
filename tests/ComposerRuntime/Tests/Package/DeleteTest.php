@@ -13,7 +13,7 @@ class DeleteTest extends \ComposerRuntime\Tests\Base
         $filename = $this->getFilename('testDeleteData');
         $this->package->open($filename);
 
-        $result = $this->package->valueDelete('/minimum-stability');
+        $result = $this->package->deleteValue('/minimum-stability');
         $this->assertTrue($result);
 
         $expected = $this->getExpected(__FUNCTION__);
@@ -29,7 +29,7 @@ class DeleteTest extends \ComposerRuntime\Tests\Base
         $filename = $this->getFilename('testDeleteData');
         $this->package->open($filename);
 
-        $result = $this->package->valueDelete('/license/0');
+        $result = $this->package->deleteValue('/license/0');
         $this->assertTrue($result);
 
         $expected = $this->getExpected(__FUNCTION__);

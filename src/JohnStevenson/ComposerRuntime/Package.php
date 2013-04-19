@@ -41,32 +41,50 @@ class Package
 
     public function create($values)
     {
-        $vendor = Utils::get($values, 'vendor');
-        $name = Utils::get($values, 'name');
-        $description = Utils::get($values, 'description', $name);
-        $author = Utils::get($values, 'author');
-        $email = Utils::get($values, 'email');
-        $stability = Utils::get($values, 'stability');
-        $php = Utils::get($values, 'php', '5.3.2');
+        $items = array();
+        $items['vendor'] = Utils::get($values, 'vendor');
+        $items['name'] = Utils::get($values, 'name');
+        $items['type'] = Utils::get($values, 'type', 'library');
+        $items['description'] = Utils::get($values, 'description', $items['name']);
+        $items['author'] = Utils::get($values, 'author');
+        $items['email'] = Utils::get($values, 'email');
+        $items['stability'] = Utils::get($values, 'stability');
+        $items['php'] = Utils::get($values, 'php', '5.3.2');
 
-        if (!$vendor || !$name) {
-            throw new \RuntimeException('Required options missing');
+        if ($library = $items['vendor'] || $items['name']) {
+            $errors = array();
+
+            if (!$items['vendor']) {
+                $errors[] = 'vendor';
+            }
+
+            if (!$items['name']) {
+                $errors[] = 'name';
+            }
+
+            if ($errors) {
+                $msg = 'Missing required value: '. implode(' and ' , $errors);
+                throw new \RuntimeException($msg);
+            }
+
+            $this->addValue('/name', $items['vendor'].'/'.$items['name']);
+            $this->addValue('/type', $items['type']);
+            $this->addValue('/description', $items['description']);
+            $this->linkAdd('require', 'php', '>='.$items['php']);
+
         }
 
-        $this->valueAdd('/name', $vendor.'/'.$name);
-        $this->valueAdd('/type', 'library');
-        $this->valueAdd('/description', $description);
-
-        if ($author && $email) {
-            $this->valueAdd('/authors/0/name', $author);
-            $this->valueAdd('/authors/0/email', $email);
+        if ($items['author']) {
+            $this->addValue('/authors/0/name', $items['author']);
         }
 
-        if ($stability) {
-            $this->valueAdd('/minimum-stability', $stability);
+        if ($items['email']) {
+            $this->addValue('/authors/0/email', $items['email']);
         }
 
-        $this->linkAdd('require', 'php', '>='.$php);
+        if ($items['stability']) {
+            $this->addValue('/minimum-stability', $items['stability']);
+        }
     }
 
     public function open($filename)
@@ -76,7 +94,7 @@ class Package
         }
 
         $this->document = new Document($json, $this->getSchema());
-        $this->validate();
+        $this->validate(true);
         $this->filename = $filename;
     }
 
@@ -92,28 +110,33 @@ class Package
 
     public function toJson()
     {
-        if (!$this->document->toJsonEx($json, true, true, true, $this->jsonTabs)) {
+        $this->document->tidy(true);
+        return $this->document->toJson(true, $this->jsonTabs);
+    }
+
+    public function validate($lax = true)
+    {
+        if (!$this->document->validate($lax)) {
             throw new \RuntimeException($this->document->error);
         }
-        return $json;
     }
 
     public function autoloadAdd($type, $name, $source = '')
     {
-        $path = Utils::addToPath('/autoload', $type);
+        $path = Utils::pathAdd('/autoload', $type);
 
         if ('psr-0' === $type) {
-            $path = Utils::addToPath($path, $name);
-            $this->valueAdd($path, $source);
+            $path = Utils::pathAdd($path, $name);
+            $this->addValue($path, $source);
         } else {
             $items = array();
 
-            if ($existing = $this->valueGet($path)) {
+            if ($existing = $this->getValue($path)) {
                 $items = (array) $existing;
             }
 
             $items[] = $name;
-            $this->valueAdd($path, array_unique($items));
+            $this->addValue($path, array_unique($items));
         }
     }
 
@@ -121,7 +144,7 @@ class Package
     {
         $licenses = array();
 
-        if ($existing = $this->valueGet('/license')) {
+        if ($existing = $this->getValue('/license')) {
             $licenses = (array) $existing;
         }
 
@@ -132,29 +155,29 @@ class Package
             $licenses = $licenses[0];
         }
 
-        $this->valueAdd('/license', $licenses);
+        $this->addValue('/license', $licenses);
     }
 
     public function linkAdd($type, $package, $version)
     {
-        $this->valueAdd(array($type, $package), $version);
+        $this->addValue(array($type, $package), $version);
     }
 
     public function linkDelete($type, $package)
     {
-        return $this->valueDelete(array($type, $package));
+        return $this->deleteValue(array($type, $package));
     }
 
     public function linkGet($type, $package)
     {
-        return $this->valueGet(array($type, $package));
+        return $this->getValue(array($type, $package));
     }
 
     public function repositoryAdd($data)
     {
         $repos = array();
 
-        if ($existing = $this->valueGet('/repositories')) {
+        if ($existing = $this->getValue('/repositories')) {
 
             if (is_object($existing)) {
                 $repos[] = $existing;
@@ -163,34 +186,30 @@ class Package
             }
         }
 
-        $repos[] = Utils::encodeDataKeys($data);
-        $this->valueAdd('/repositories', Utils::uniqueArray($repos));
+        $repos[] = Utils::pathDataEncode($data);
+        $this->addValue('/repositories', Utils::uniqueArray($repos));
     }
 
-    public function valueAdd($path, $value)
+    public function addValue($path, $value)
     {
-        if (!$this->document->addValue($path, Utils::encodeDataKeys($value))) {
+        if (!$this->document->addValue($path, Utils::pathDataEncode($value))) {
             throw new \RuntimeException($this->document->error);
         }
     }
 
-    public function valueDelete($path)
+    public function deleteValue($path)
     {
         return $this->document->deleteValue($path);
     }
 
-    public function valueGet($path)
+    public function getValue($path)
     {
-        if ($this->document->getValue($path, $value)) {
-            return $value;
-        }
+        return $this->document->getValue($path);
     }
 
-    protected function validate()
+    public function hasValue($path, &$value)
     {
-        if (!$this->document->validate()) {
-            throw new \RuntimeException($this->document->error);
-        }
+        return $this->document->hasValue($path, $value);
     }
 
     protected function getSchema()

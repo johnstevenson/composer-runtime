@@ -270,7 +270,13 @@ class Package
     {
         $this->error = null;
         $this->document = new Document();
-        $this->document->loadSchema($this->getSchema());
+
+        try {
+            $this->document->loadSchema($this->getSchema());
+        } catch (\Exception $e) {
+            $this->handleError($e->getMessage());
+            return false;
+        }
     }
 
     protected function handleError($msg)

@@ -2,7 +2,7 @@
     "name": "johnstevenson/composer-runtime",
     "type": "library",
     "description": "Run Composer from your application",
-    "keywords": ["composer", "run", "runtime"],
+    "keywords": ["composer", "run", "runtime", "package"],
     "homepage": "http://github.com/johnstevenson/composer-runtime",
     "license": "MIT",
     "authors": [

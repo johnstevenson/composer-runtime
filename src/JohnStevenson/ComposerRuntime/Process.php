@@ -81,28 +81,34 @@ class Process
     * Creates a new Package
     *
     * @param array $values The basic package properties
+    * @param boolean $throwError Throw errors or report them in $package->error
     * @return Package
     */
-    public function packageCreate($values)
+    public function packageCreate($values, $throwError = false)
     {
-        return new Package($values);
+        $package = new Package($throwError);
+        $package->create($values);
+        return $package;
     }
 
     /**
     * Creates a Package from an existing composer.json file
     *
-    * @param string $filename
+    * @param string|null $filename Package filename or empty to use composer.json
+    * @param boolean $throwError Throw errors or report them in $package->error
     * @return Package
     */
-    public function packageOpen($filename)
+    public function packageOpen($filename, $throwError = false)
     {
-        return new Package($filename);
+        $package = new Package($throwError);
+        $package->open($filename);
+        return $package;
     }
 
     /**
     * Runs composer install on the package
     *
-    * @param mixed $package Either a Package or filename
+    * @param mixed $package A Package, filename or empty for composer.json
     * @param string|array $params
     * @return boolean
     */
@@ -114,7 +120,7 @@ class Process
     /**
     * Runs composer unpdate on the package
     *
-    * @param mixed $package Either a Package or filename
+    * @param mixed $package A Package, filename or empty for composer.json
     * @param string|array $params
     * @return boolean
     */
@@ -255,12 +261,30 @@ class Process
     */
     protected function packageWork($package, $params, $install)
     {
+        $mode = $install ? 'install' : 'update';
+
         if (!($package instanceof Package)) {
             $package = $this->packageOpen($package);
         }
 
+        if (!$error = $package->error) {
+            if (!$package->filename) {
+                $error = 'Missing filename';
+            } elseif(!file_exists($package->filename)) {
+                $error = 'Cannot find file: '.$package->filename;
+            }
+        }
+
+        if ($error) {
+            echo sprintf('Package %s failed. %s.', $mode, $error);
+            echo PHP_EOL, PHP_EOL;
+
+            return false;
+        }
+
         $params = (array) $params;
-        array_unshift($params, $install ? 'install' : 'update');
+        array_unshift($params, $mode);
+
         return $this->run($params, dirname($package->filename));
     }
 }

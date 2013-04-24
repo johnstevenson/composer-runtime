@@ -29,6 +29,11 @@ class Base extends \PHPUnit_Framework_TestCase
         }
     }
 
+    public function getNewPackage($throwError = false)
+    {
+        return new \JohnStevenson\ComposerRuntime\Package($throwError);
+    }
+
     public function getExpected($test, $tabs = false)
     {
         $filename = $this->getFilename($test);

@@ -27,20 +27,25 @@ class Package
     */
     public $filename;
 
-    public function __construct($param = null)
+    /**
+    * @var string
+    */
+    public $error;
+
+    /**
+    * @var boolean
+    */
+    public $throwError;
+
+    public function __construct($throwError = false)
     {
-        if (is_string($param)) {
-            $this->open($param);
-        } else {
-            $this->document = new Document(null, $this->getSchema());
-            if (null !== $param) {
-                $this->create($param);
-            }
-        }
+        $this->throwError = $throwError;
     }
 
     public function create($values)
     {
+        $this->init();
+
         $items = array();
         $items['vendor'] = Utils::get($values, 'vendor');
         $items['name'] = Utils::get($values, 'name');
@@ -50,62 +55,102 @@ class Package
         $items['email'] = Utils::get($values, 'email');
         $items['stability'] = Utils::get($values, 'stability');
         $items['php'] = Utils::get($values, 'php', '5.3.2');
+        $items['require'] = Utils::get($values, 'require', array());
 
-        if ($library = $items['vendor'] || $items['name']) {
-            $errors = array();
+        $currentThrow = $this->throwError;
+        $this->throwError = true;
 
-            if (!$items['vendor']) {
-                $errors[] = 'vendor';
+        try {
+
+            if ($library = $items['vendor'] || $items['name']) {
+                $errors = array();
+
+                if (!$items['vendor']) {
+                    $errors[] = 'vendor';
+                }
+
+                if (!$items['name']) {
+                    $errors[] = 'name';
+                }
+
+                if ($errors) {
+                    $msg = 'Missing required value: '. implode(' and ' , $errors);
+                    $this->handleError($msg);
+                }
+
+                $this->addValue('/name', $items['vendor'].'/'.$items['name']);
+                $this->addValue('/type', $items['type']);
+                $this->addValue('/description', $items['description']);
+                $this->linkAdd('require', 'php', '>='.$items['php']);
+
+                if ($items['author']) {
+                    $this->addValue('/authors/0/name', $items['author']);
+                }
+
+                if ($items['email']) {
+                    $this->addValue('/authors/0/email', $items['email']);
+                }
             }
 
-            if (!$items['name']) {
-                $errors[] = 'name';
+            if ($items['stability']) {
+                $this->addValue('/minimum-stability', $items['stability']);
             }
 
-            if ($errors) {
-                $msg = 'Missing required value: '. implode(' and ' , $errors);
-                throw new \RuntimeException($msg);
+            foreach ($items['require'] as $package => $version) {
+                $this->linkAdd('require', $package, $version);
             }
 
-            $this->addValue('/name', $items['vendor'].'/'.$items['name']);
-            $this->addValue('/type', $items['type']);
-            $this->addValue('/description', $items['description']);
-            $this->linkAdd('require', 'php', '>='.$items['php']);
-
+        } catch (\Exception $e) {
+            $this->error = $e->getMessage();
         }
 
-        if ($items['author']) {
-            $this->addValue('/authors/0/name', $items['author']);
+        $this->throwError = $currentThrow;
+
+        if ($this->error) {
+            $this->handleError($this->error);
         }
 
-        if ($items['email']) {
-            $this->addValue('/authors/0/email', $items['email']);
-        }
-
-        if ($items['stability']) {
-            $this->addValue('/minimum-stability', $items['stability']);
-        }
+        return empty($this->error);
     }
 
     public function open($filename)
     {
-        if ($json = file_get_contents($filename)) {
-            $this->jsonTabs = preg_match('/^\t+["\{\[]/m', $json);
+        $this->init();
+
+        $filename = $filename ?: getcwd().'/composer.json';
+        $filename = strtr($filename, '\\', '/');
+
+        if (!$json = @file_get_contents($filename)) {
+            $this->handleError('Unable to open file: '.$filename);
+            return false;
         }
 
-        $this->document = new Document($json, $this->getSchema());
+        $this->jsonTabs = preg_match('/^\t+["\{\[]/m', $json);
+
+        try {
+            $this->document->loadData($json);
+        } catch (\Exception $e) {
+            $this->handleError($e->getMessage());
+            return false;
+        }
+
         $this->validate(true);
         $this->filename = $filename;
+
+        return empty($this->error);
     }
 
     public function save($filename)
     {
         $json = $this->toJson();
-        if (!file_put_contents($filename, $json)) {
-            throw new \RuntimeException('Unable to write file: '.$filename);
+        $filename = strtr($filename, '\\', '/');
+
+        if (!@file_put_contents($filename, $json)) {
+            $this->handleError('Unable to write file: '.$filename);
         }
 
         $this->filename = $filename;
+        return empty($this->error);
     }
 
     public function toJson()
@@ -114,11 +159,13 @@ class Package
         return $this->document->toJson(true, $this->jsonTabs);
     }
 
-    public function validate($lax = true)
+    public function validate($lax)
     {
-        if (!$this->document->validate($lax)) {
-            throw new \RuntimeException($this->document->error);
+        if (!$result = $this->document->validate($lax)) {
+            $this->handleError($this->document->lastError);
         }
+
+        return $result;
     }
 
     public function autoloadAdd($type, $name, $source = '')
@@ -127,7 +174,7 @@ class Package
 
         if ('psr-0' === $type) {
             $path = Utils::pathAdd($path, $name);
-            $this->addValue($path, $source);
+            $value = $source;
         } else {
             $items = array();
 
@@ -136,8 +183,10 @@ class Package
             }
 
             $items[] = $name;
-            $this->addValue($path, array_unique($items));
+            $value = array_unique($items);
         }
+
+        return $this->addValue($path, $value);
     }
 
     public function licenceAdd($license)
@@ -155,12 +204,12 @@ class Package
             $licenses = $licenses[0];
         }
 
-        $this->addValue('/license', $licenses);
+        return $this->addValue('/license', $licenses);
     }
 
     public function linkAdd($type, $package, $version)
     {
-        $this->addValue(array($type, $package), $version);
+        return $this->addValue(array($type, $package), $version);
     }
 
     public function linkDelete($type, $package)
@@ -186,15 +235,20 @@ class Package
             }
         }
 
-        $repos[] = Utils::pathDataEncode($data);
+        $repos[] = Utils::dataCopy($data);
+
         $this->addValue('/repositories', Utils::uniqueArray($repos));
+
+        return empty($this->error);
     }
 
     public function addValue($path, $value)
     {
-        if (!$this->document->addValue($path, Utils::pathDataEncode($value))) {
-            throw new \RuntimeException($this->document->error);
+        if (!$result = $this->document->addValue($path, $value)) {
+            $this->handleError($this->document->lastError);
         }
+
+        return $result;
     }
 
     public function deleteValue($path)
@@ -210,6 +264,22 @@ class Package
     public function hasValue($path, &$value)
     {
         return $this->document->hasValue($path, $value);
+    }
+
+    protected function init()
+    {
+        $this->error = null;
+        $this->document = new Document();
+        $this->document->loadSchema($this->getSchema());
+    }
+
+    protected function handleError($msg)
+    {
+        if ($this->throwError) {
+            throw new PackageException($msg);
+        }
+
+        $this->error = $msg;
     }
 
     protected function getSchema()

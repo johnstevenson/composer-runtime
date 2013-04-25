@@ -10,8 +10,11 @@ class JsonTest extends \ComposerRuntime\Tests\Base
     */
     public function testJsonWithTabs()
     {
-        $filename = $this->getTabFilename('testJsonData');
+        $data = $this->getExpected('testJsonData', true);
+        $filename = $this->getTempFile($data);
+
         $this->package->open($filename);
+        @unlink($filename);
 
         $expected = $this->getExpected('testJsonData', true);
         $this->assertEquals($expected, $this->package->toJson());

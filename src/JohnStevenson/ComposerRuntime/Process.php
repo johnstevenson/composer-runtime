@@ -9,32 +9,54 @@ namespace JohnStevenson\ComposerRuntime;
 */
 class Process
 {
+    public $error;
     protected $command;
-    protected $workingDirectory;
+    protected $workingDir;
+
+    /**
+    * Constructor
+    *
+    * @param mixed $workingDir
+    * @return Process
+    */
+    public function __construct($workingDir = null)
+    {
+        $this->setWorkingDir($workingDir);
+    }
 
     /**
     * Runs a composer CLI command and captures the output.
     *
     * @param string|array $params The composer params
     * @param array $output The returned output
-    * @param string|null $workingDirectory The working directory
+    * @param string|null $workingDir The working directory
     * @return boolean Whether the exit code is 0
     */
-    public function capture($params, &$output, $workingDirectory = null)
+    public function capture($params, &$output, $workingDir = null)
     {
-        return $this->processWork($params, $workingDirectory, $output, true);
+        return $this->processWork($params, $workingDir, $output, true);
     }
 
     /**
     * Runs a composer CLI command.
     *
     * @param string|array $params The composer params
-    * @param string|null $workingDirectory The working directory
+    * @param string|null $workingDir The working directory
     * @return boolean Whether the exit code is 0
     */
-    public function run($params, $workingDirectory = null)
+    public function run($params, $workingDir = null)
     {
-        return $this->processWork($params, $workingDirectory, $dummy, false);
+        return $this->processWork($params, $workingDir, $dummy, false);
+    }
+
+    /**
+    * Check if composer is installed
+    *
+    * @return boolean Whether composer is installed
+    */
+    public function installed()
+    {
+        return $this->run('--version');
     }
 
    /**
@@ -68,26 +90,26 @@ class Process
     }
 
     /**
-    * Sets workingDirectory for process calls. Can be unset by passing null or an empty string
+    * Sets workingDir for process calls. Can be unset by passing null or an empty string
     *
     * @param mixed $path
     */
-    public function setWorkingDirectory($path)
+    public function setWorkingDir($path)
     {
-      $this->workingDirectory = $path && is_string($path) ? $path : null;
+        $this->workingDir = $path && is_string($path) ? $path : null;
     }
 
     /**
     * Creates a new Package
     *
     * @param array $values The basic package properties
-    * @param boolean $throwError Throw errors or report them in $package->error
     * @return Package
     */
-    public function packageCreate($values, $throwError = false)
+    public function packageCreate($values, $filename = null)
     {
-        $package = new Package($throwError);
+        $package = new Package();
         $package->create($values);
+        $package->filename = $this->packageGetName($filename);
         return $package;
     }
 
@@ -95,12 +117,12 @@ class Process
     * Creates a Package from an existing composer.json file
     *
     * @param string|null $filename Package filename or empty to use composer.json
-    * @param boolean $throwError Throw errors or report them in $package->error
     * @return Package
     */
-    public function packageOpen($filename, $throwError = false)
+    public function packageOpen($filename)
     {
-        $package = new Package($throwError);
+        $package = new Package();
+        $filename = $this->packageGetName($filename);
         $package->open($filename);
         return $package;
     }
@@ -210,14 +232,14 @@ class Process
     * Runs a Composer CLI command from capture or run.
     *
     * @param string|array $params The composer params
-    * @param string|null $workingDirectory The working directory
+    * @param string|null $workingDir The working directory
     * @param array $output The returned output, if required
     * @param boolean $capture Whether to capture the output
     * @return boolean Whether the exit code is 0
     */
-    protected function processWork($params, $workingDirectory, &$output, $capture)
+    protected function processWork($params, $workingDir, &$output, $capture)
     {
-        $cwd = $this->changeWorkingDirectory($workingDirectory);
+        $cwd = $this->changeWorkingDirectory($workingDir);
         $command = $this->getCommand().' '.$this->getParams($params);
 
         if ($capture) {
@@ -243,12 +265,27 @@ class Process
     {
         $result = null;
 
-        if ($directory = $directory ?: $this->workingDirectory) {
+        if ($directory = $directory ?: $this->workingDir) {
             $result = getcwd();
             chdir($directory);
         }
 
         return $result;
+    }
+
+    /**
+    * Returns the package name. If filename is empty uses the working directory
+    *
+    * @param mixed $filename
+    */
+    protected function packageGetName($filename)
+    {
+        if (!$filename) {
+            $path = $this->workingDir ?: getcwd();
+            $filename = $path.'/composer.json';
+        }
+
+        return strtr($filename, '\\', '/');
     }
 
     /**

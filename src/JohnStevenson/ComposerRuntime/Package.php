@@ -32,16 +32,6 @@ class Package
     */
     public $error;
 
-    /**
-    * @var boolean
-    */
-    public $throwError;
-
-    public function __construct($throwError = false)
-    {
-        $this->throwError = $throwError;
-    }
-
     public function create($values)
     {
         $this->init();
@@ -57,57 +47,41 @@ class Package
         $items['php'] = Utils::get($values, 'php', '5.3.2');
         $items['require'] = Utils::get($values, 'require', array());
 
-        $currentThrow = $this->throwError;
-        $this->throwError = true;
+        if ($library = $items['vendor'] || $items['name']) {
+            $errors = array();
 
-        try {
-
-            if ($library = $items['vendor'] || $items['name']) {
-                $errors = array();
-
-                if (!$items['vendor']) {
-                    $errors[] = 'vendor';
-                }
-
-                if (!$items['name']) {
-                    $errors[] = 'name';
-                }
-
-                if ($errors) {
-                    $msg = 'Missing required value: '. implode(' and ' , $errors);
-                    $this->handleError($msg);
-                }
-
-                $this->addValue('/name', $items['vendor'].'/'.$items['name']);
-                $this->addValue('/type', $items['type']);
-                $this->addValue('/description', $items['description']);
-                $this->linkAdd('require', 'php', '>='.$items['php']);
-
-                if ($items['author']) {
-                    $this->addValue('/authors/0/name', $items['author']);
-                }
-
-                if ($items['email']) {
-                    $this->addValue('/authors/0/email', $items['email']);
-                }
+            if (!$items['vendor']) {
+                $errors[] = 'vendor';
             }
 
-            if ($items['stability']) {
-                $this->addValue('/minimum-stability', $items['stability']);
+            if (!$items['name']) {
+                $errors[] = 'name';
             }
 
-            foreach ($items['require'] as $package => $version) {
-                $this->linkAdd('require', $package, $version);
+            if ($errors) {
+                $this->error = 'Missing required value: '. implode(' and ' , $errors);
             }
 
-        } catch (\Exception $e) {
-            $this->error = $e->getMessage();
+            $this->addValue('/name', $items['vendor'].'/'.$items['name']);
+            $this->addValue('/type', $items['type']);
+            $this->addValue('/description', $items['description']);
+            $this->linkAdd('require', 'php', '>='.$items['php']);
+
+            if ($items['author']) {
+                $this->addValue('/authors/0/name', $items['author']);
+            }
+
+            if ($items['email']) {
+                $this->addValue('/authors/0/email', $items['email']);
+            }
         }
 
-        $this->throwError = $currentThrow;
+        if ($items['stability']) {
+            $this->addValue('/minimum-stability', $items['stability']);
+        }
 
-        if ($this->error) {
-            $this->handleError($this->error);
+        foreach ($items['require'] as $package => $version) {
+            $this->linkAdd('require', $package, $version);
         }
 
         return empty($this->error);
@@ -116,41 +90,41 @@ class Package
     public function open($filename)
     {
         $this->init();
-
-        $filename = $filename ?: getcwd().'/composer.json';
         $filename = strtr($filename, '\\', '/');
 
         if (!$json = @file_get_contents($filename)) {
-            $this->handleError('Unable to open file: '.$filename);
-            return false;
+            $this->error = 'Unable to open file: '.$filename;
+        } else {
+
+            try {
+                $this->document->loadData($json);
+                $this->jsonTabs = preg_match('/^\t+["\{\[]/m', $json);
+                $this->validate(true);
+                $this->filename = $filename;
+            } catch (\Exception $e) {
+                $this->error = $e->getMessage();
+                return false;
+            }
+
         }
-
-        $this->jsonTabs = preg_match('/^\t+["\{\[]/m', $json);
-
-        try {
-            $this->document->loadData($json);
-        } catch (\Exception $e) {
-            $this->handleError($e->getMessage());
-            return false;
-        }
-
-        $this->validate(true);
-        $this->filename = $filename;
 
         return empty($this->error);
     }
 
-    public function save($filename)
+    public function save($filename = null)
     {
-        $json = $this->toJson();
+        $filename = $filename ?: $this->filename;
         $filename = strtr($filename, '\\', '/');
 
-        if (!@file_put_contents($filename, $json)) {
-            $this->handleError('Unable to write file: '.$filename);
+        $json = $this->toJson();
+
+        if (!$result = @file_put_contents($filename, $json)) {
+            $this->error = 'Unable to write file: '.$filename;
+        } else {
+            $this->filename = $filename;
         }
 
-        $this->filename = $filename;
-        return empty($this->error);
+        return $result;
     }
 
     public function toJson()
@@ -162,7 +136,7 @@ class Package
     public function validate($lax)
     {
         if (!$result = $this->document->validate($lax)) {
-            $this->handleError($this->document->lastError);
+            $this->error = $this->document->lastError;
         }
 
         return $result;
@@ -245,7 +219,7 @@ class Package
     public function addValue($path, $value)
     {
         if (!$result = $this->document->addValue($path, $value)) {
-            $this->handleError($this->document->lastError);
+            $this->error = $this->document->lastError;
         }
 
         return $result;
@@ -270,22 +244,7 @@ class Package
     {
         $this->error = null;
         $this->document = new Document();
-
-        try {
-            $this->document->loadSchema($this->getSchema());
-        } catch (\Exception $e) {
-            $this->handleError($e->getMessage());
-            return false;
-        }
-    }
-
-    protected function handleError($msg)
-    {
-        if ($this->throwError) {
-            throw new PackageException($msg);
-        }
-
-        $this->error = $msg;
+        $this->document->loadSchema($this->getSchema());
     }
 
     protected function getSchema()

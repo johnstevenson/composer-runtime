@@ -6,7 +6,6 @@ class Base extends \PHPUnit_Framework_TestCase
 {
     public $package;
     public $values;
-    public $tmpFiles;
 
     public function setUp()
     {
@@ -18,20 +17,6 @@ class Base extends \PHPUnit_Framework_TestCase
             'email' => 'fred@somewhere.org',
             'description' => 'Package Test',
         );
-
-        $this->tmpFiles = array();
-    }
-
-    public function tearDown()
-    {
-        foreach ($this->tmpFiles as $tmpFile) {
-            @unlink($tmpFile);
-        }
-    }
-
-    public function getNewPackage($throwError = false)
-    {
-        return new \JohnStevenson\ComposerRuntime\Package($throwError);
     }
 
     public function getExpected($test, $tabs = false)
@@ -44,27 +29,26 @@ class Base extends \PHPUnit_Framework_TestCase
          } else {
             return file_get_contents($filename);
         }
-     }
+    }
 
     public function getFilename($test, $tabs = false)
     {
         return __DIR__.'/Package/Fixtures/'.$test.'.json';
     }
 
-    public function getTabFilename($test)
+    public function getTempFile($data)
     {
-        $data = $this->getExpected($test, true);
-        $tmp = tempnam(sys_get_temp_dir(), 'test');
+        $filename = tempnam(sys_get_temp_dir(), 'test');
 
-        if (!$fh = fopen($tmp, "w")) {
+        if (!$fh = fopen($filename, "w")) {
             throw new \Exception('Cannot create tmp file');
         }
 
         fwrite($fh, $data);
         fclose($fh);
-        $this->tmpFiles[] = $tmp;
 
-        return $tmp;
+
+        return $filename;
     }
 
     protected function fileSpacesToTabs($data)

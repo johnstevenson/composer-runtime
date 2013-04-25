@@ -70,7 +70,7 @@ Or you can modify or query existing packages.
 <?php
 $composer->setWorkingDir($project);
 
-# open composer.json in our $project directory
+# open composer.json from our $project directory
 $package = $composer->packageOpen();
 
 # get the version of a requirement
@@ -91,13 +91,13 @@ Package management includes json-schema validation and is built on top of the [J
 You must use [Composer][composer]. Add the following to the require section in your *composer.json* file:
 
 ```
-"johnstevenson/json-works": "1.0.*"
+"johnstevenson/composer-runtime": "1.0.*"
 ```
 
 <a name="Usage"></a>
 ## Usage
 
-Full usage [documentation][wiki] is available in the Wiki.
+Full usage [documentation][wiki] is currently being compiled and will be available in the Wiki.
 
 <a name="License"></a>
 ## License
@@ -107,4 +107,3 @@ Composer-Runtime is licensed under the MIT License - see the `LICENSE` file for 
 [composer]: http://getcomposer.org
 [json-works]: https://github.com/johnstevenson/json-works
 [wiki]:https://github.com/johnstevenson/composer-runtime/wiki/Home
-

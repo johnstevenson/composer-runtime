@@ -13,7 +13,7 @@ Run [Composer][composer] from your application
 
 <a name="About"></a>
 ## About
-Composer-Runtime enables you to call Composer from within your application, without having to care about where it is installed.
+**Composer-Runtime** enables you to call Composer from within your application, without worrying about where it is installed.
 
 ```php
 <?php
@@ -26,7 +26,7 @@ $result = $composer->run(array('dump-autoload', '--optimize'));
 $result = $composer->capture('update', $output, $workingDir);
 ```
 
-In addition to this, and complementing Composer's own package commands, Composer-Runtime includes full package-management capabilities. You can, for example, create and install packages for project requirements:
+In addition to this, and complementing Composer's own package commands, **Composer-Runtime** includes full package administration capabilities. You can, for example, create and install packages for project requirements:
 
 ```php
 <?php
@@ -64,7 +64,7 @@ $package->save();
 
 ```
 
-Or you can modify or query existing packages.
+Or you can query or modify existing packages.
 
 ```php
 <?php
@@ -84,7 +84,7 @@ $package->save();
 $composer->packageUpdate($package);
 ```
 
-Package management includes json-schema validation and is built on top of the [Json-Works][json-works] library.
+Package administration includes json-schema validation and is built on top of the [Json-Works][json-works] library.
 
 <a name="Installation"></a>
 ## Installation
@@ -102,7 +102,7 @@ Full usage [documentation][wiki] is currently being compiled and will be availab
 <a name="License"></a>
 ## License
 
-Composer-Runtime is licensed under the MIT License - see the `LICENSE` file for details.
+**Composer-Runtime** is licensed under the MIT License - see the `LICENSE` file for details.
 
 [composer]: http://getcomposer.org
 [json-works]: https://github.com/johnstevenson/json-works
